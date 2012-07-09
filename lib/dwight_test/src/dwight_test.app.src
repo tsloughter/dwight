@@ -1,0 +1,9 @@
+%% This is the application resource file (.app file) for the,
+%% application.
+{application, dwight_test,
+  [{description, "Your Desc HERE"},
+   {vsn, "0.1.0"},
+   {modules, []},
+   {registered,[]},
+   {applications, [kernel, stdlib, ibrowse]},
+   {start_phases, []}]}.

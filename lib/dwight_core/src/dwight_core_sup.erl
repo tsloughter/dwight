@@ -43,29 +43,11 @@ init([]) ->
     ChildSpec = cowboy:child_spec(dwight_cowboy, 100, cowboy_tcp_transport, 
                                   [{port, 8080}], cowboy_http_protocol, [{dispatch, Dispatch}]),
 
-    populate_tables(),
-
     {ok, {SupFlags, [ChildSpec]}}.
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-
-populate_tables() ->
-    {ok, Domains} = {ok, [{<<"localhost">>, <<"abc">>}]}, %application:get_env(dwight_core, domains),
-    {ok, RouteIds} = {ok, [{<<"abc">>, <<"localhost">>, 7999}]}, %application:get_env(dwight_core, route_ids),
-        
-    create_table(domains, Domains),
-    create_table(route_ids, RouteIds),
-
-    ok.
-
-create_table(Name, Elems) ->    
-    ets:new(Name, [public, named_table]), 
-
-    lists:foreach(fun(Elem) ->
-                          ets:insert(Name, Elem)
-                  end, Elems).
 
 %%%====================================================================
 %%% tests

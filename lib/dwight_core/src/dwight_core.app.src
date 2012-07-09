@@ -6,6 +6,6 @@
    {modules, [dwight_core_app,
               dwight_core_sup]},
    {registered,[dwight_core_sup]},
-   {applications, [kernel, stdlib, cowboy]},
+   {applications, [kernel, stdlib, cowboy, gproc]},
    {mod, {dwight_core_app,[]}},
    {start_phases, []}]}.
