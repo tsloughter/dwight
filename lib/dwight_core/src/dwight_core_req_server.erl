@@ -57,6 +57,7 @@ handle_call(close, _From, State=#state{client=Client}) ->
     {reply, ok, State#state{client=Client2}};
 handle_call({Method, Host, Port, Path, _Body}, _From, State=#state{client=Client}) ->    
     Url = list_to_binary(lists:flatten(io_lib:format("http://~s:~p/~s", [Host, Port, Path]))),
+
     {ok, Client2} = cowboy_client:request(Method, Url, Client),
     {ok, Status, Response, Client3} = cowboy_client:response(Client2),
 
@@ -88,11 +89,12 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
+-spec get_client(binary(), integer()) -> pid().
 get_client(Host, Port) ->
     case gproc:where({n, l, {Host, Port}}) of
         Pid when is_pid(Pid) ->
             Pid;
         _ ->
-            {ok, Pid} = dwight_core_req_server:start_link(Host, Port),
+            {ok, Pid} = dwight_core_req_sup:start_child(Host, Port),
             Pid
     end.

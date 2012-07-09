@@ -4,11 +4,12 @@
 %%% @end
 %%% @copyright 2012 Tristan Sloughter
 %%%----------------------------------------------------------------
--module(dwight_core_sup).
+-module(dwight_core_req_sup).
 -behaviour(supervisor).
 
 %% API
--export([start_link/0]).
+-export([start_link/0, 
+         start_child/2]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -19,37 +20,33 @@
 %%% API functions
 %%%===================================================================
 
--spec start_link() -> {ok, pid()} | any().
 start_link() ->
     supervisor:start_link({local, ?SERVER}, ?MODULE, []).
+
+start_child(Host, Port) ->
+    io:format("start child"),
+    supervisor:start_child(?SERVER, [Host, Port]).
 
 %%%===================================================================
 %%% Supervisor callbacks
 %%%===================================================================
 
-
 %% @private
--spec init(list()) -> {ok, {SupFlags::any(), [ChildSpec::any()]}} |
-                       ignore | {error, Reason::any()}.
 init([]) ->
-    RestartStrategy = one_for_one,
-    MaxRestarts = 1000,
-    MaxSecondsBetweenRestarts = 3600,
+    RestartStrategy = simple_one_for_one,
+    MaxRestarts = 0,
+    MaxSecondsBetweenRestarts = 1,
 
     SupFlags = {RestartStrategy, MaxRestarts, MaxSecondsBetweenRestarts},
 
-    Restart = permanent,
+    Restart = transient,
     Shutdown = 2000,
-    Type = supervisor,
+    Type = worker,
 
-    Dispatch = [{'_', [{[], dwight_core_handler, []}]}],    
+    AChild = {dwight_core_req_server, {dwight_core_req_server, start_link, []},
+              Restart, Shutdown, Type, [dwight_core_req_server]},
 
-    ChildSpecs = [cowboy:child_spec(dwight_cowboy, 100, cowboy_tcp_transport, 
-                                    [{port, 8080}], cowboy_http_protocol, [{dispatch, Dispatch}]),
-                  {dwight_core_req_sup, {dwight_core_req_sup, start_link, []},
-                   Restart, Shutdown, Type, [dwight_core_req_sup]}],
-
-    {ok, {SupFlags, ChildSpecs}}.
+    {ok, {SupFlags, [AChild]}}.
 
 %%%===================================================================
 %%% Internal functions

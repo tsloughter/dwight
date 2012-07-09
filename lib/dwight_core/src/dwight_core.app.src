@@ -5,7 +5,9 @@
    {vsn, "0.1.0"},
    {modules, [dwight_core_app,
               dwight_core_sup]},
-   {registered,[dwight_core_sup]},
+   {registered,[dwight_core_sup,
+                dwight_cowboy,
+                dwight_core_req_sup]},
    {applications, [kernel, stdlib, cowboy, gproc]},
    {mod, {dwight_core_app,[]}},
    {start_phases, []}]}.
