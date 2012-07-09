@@ -1,0 +1,11 @@
+%% This is the application resource file (.app file) for the,
+%% application.
+{application, dwight_core,
+  [{description, "Your Desc HERE"},
+   {vsn, "0.1.0"},
+   {modules, [dwight_core_app,
+              dwight_core_sup]},
+   {registered,[dwight_core_sup]},
+   {applications, [kernel, stdlib, cowboy]},
+   {mod, {dwight_core_app,[]}},
+   {start_phases, []}]}.
