@@ -42,7 +42,7 @@ init([]) ->
     Shutdown = 2000,
     Type = supervisor,
 
-    Dispatch = [{'_', [{[], dwight_core_handler, []}]}],    
+    Dispatch = [{'_', [{[], dwight_core_handler2, []}]}],    
 
     ChildSpecs = [cowboy:child_spec(dwight_cowboy, 100, cowboy_tcp_transport, 
                                     [{port, 8080}], cowboy_http_protocol, [{dispatch, Dispatch}]),

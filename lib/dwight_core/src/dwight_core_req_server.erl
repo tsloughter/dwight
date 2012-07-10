@@ -14,7 +14,8 @@
 -export([start_link/2,
          close/1,
          send/5,
-         send/6]).
+         send/6,
+         send_async/6]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -37,6 +38,9 @@ send(Pid, Method, Host, Port, Path, Body) ->
 send(Method, Host, Port, Path, Body) ->
     gen_server:call(get_client(Host, Port), {Method, Host, Port, Path, Body}).
 
+send_async(From, Method, Host, Port, Path, Body) ->
+    gen_server:cast(get_client(Host, Port), {From, Method, Host, Port, Path, Body}).
+
 close(Pid) ->
     gen_server:call(Pid, close).
 
@@ -55,20 +59,21 @@ init([Host, Port]) ->
 handle_call(close, _From, State=#state{client=Client}) ->
     {ok, Client2} = cowboy_client:close(Client),
     {reply, ok, State#state{client=Client2}};
-handle_call({Method, Host, Port, Path, _Body}, _From, State=#state{client=Client}) ->    
-    Url = list_to_binary(lists:flatten(io_lib:format("http://~s:~p/~s", [Host, Port, Path]))),
+handle_call({Method, Host, Port, Path, Body}, _From, State=#state{client=Client}) ->    
+    {ok, Status, Headers, RespBody, Client2} = 
+        send_request(Client, Method, Host, Port, Path, Body),
 
-    {ok, Client2} = cowboy_client:request(Method, Url, Client),
-    {ok, Status, Response, Client3} = cowboy_client:response(Client2),
-
-    {ok, RespBody, Client5} = cowboy_client:response_body(Client3),
-
-    {reply, {Status, Response, RespBody}, State#state{client=Client5}}.
+    {reply, {Status, Headers, RespBody}, State#state{client=Client2}}.
 
 %%--------------------------------------------------------------------
 
-handle_cast(_Msg, State) ->
-    {noreply, State}.
+handle_cast({From, Method, Host, Port, Path, Body}, State=#state{client=Client}) ->    
+    {ok, Status, Headers, RespBody, Client2} = 
+        send_request(Client, Method, Host, Port, Path, Body),
+
+    From ! {reply, Status, Headers, RespBody},
+
+    {noreply, State#state{client=Client2}}.
 
 %%--------------------------------------------------------------------
 
@@ -98,3 +103,12 @@ get_client(Host, Port) ->
             {ok, Pid} = dwight_core_req_sup:start_child(Host, Port),
             Pid
     end.
+
+send_request(Client, Method, Host, Port, Path, _Body) ->
+    Url = list_to_binary(lists:flatten(io_lib:format("http://~s:~p/~s", [Host, Port, Path]))),
+    {ok, Client2} = cowboy_client:request(Method, Url, Client),
+    {ok, Status, Response, Client3} = cowboy_client:response(Client2),
+
+    {ok, RespBody, Client4} = cowboy_client:response_body(Client3),
+    
+    {ok, Status, Response, RespBody, Client4}.
