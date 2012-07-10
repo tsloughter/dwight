@@ -24,7 +24,6 @@ start_link() ->
     supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
 start_child(Host, Port) ->
-    io:format("start child"),
     supervisor:start_child(?SERVER, [Host, Port]).
 
 %%%===================================================================
