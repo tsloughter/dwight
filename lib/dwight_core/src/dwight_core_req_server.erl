@@ -51,8 +51,14 @@ close(Pid) ->
 init([Host, Port]) ->
     {ok, Client} = cowboy_client:init([]),
     {ok, Client2} = cowboy_client:connect(cowboy_tcp_transport, Host, Port, Client),
-    gproc:reg({n, l, {Host, Port}}, self()),
-    {ok, #state{key={Host, Port}, client=Client2}}.
+
+    try
+        gproc:reg({n, l, {Host, Port}}, self()),
+        {ok, #state{key={Host, Port}, client=Client2}}
+    catch
+        error:badarg ->
+            ignore
+    end.
 
 %%--------------------------------------------------------------------
 
