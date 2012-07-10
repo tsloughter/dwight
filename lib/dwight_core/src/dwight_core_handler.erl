@@ -23,12 +23,12 @@ handle(Req, State) ->
                 {ok, Host, Port} ->
                     {Method, Req3} = cowboy_http_req:method(Req2), 
                     {Path, Req4} = cowboy_http_req:path(Req3), 
-                    {_Headers, Req5} = cowboy_http_req:headers(Req4), 
+                    {Headers, Req5} = cowboy_http_req:headers(Req4), 
                     {ok, Body, Req6} = cowboy_http_req:body(Req5), 
 
                     %% make request
                     {RespStatus, RespHeaders, RespBody} = 
-                        dwight_core_req_server:send(atom_to_list(Method), Host, Port, Path, Body),
+                        dwight_core_req_server:send(atom_to_list(Method), Host, Port, Headers, Path, Body),
                     {ok, Req7} = cowboy_http_req:set_resp_body(RespBody, Req6),
                     {ok, Req8} = cowboy_http_req:reply(RespStatus, RespHeaders, Req7),
 

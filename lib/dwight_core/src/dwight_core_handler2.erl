@@ -22,11 +22,12 @@ init({tcp, http}, Req, _Opts) ->
                 {ok, Host, Port} ->
                     {Method, Req3} = cowboy_http_req:method(Req2), 
                     {Path, Req4} = cowboy_http_req:path(Req3), 
-                    {_Headers, Req5} = cowboy_http_req:headers(Req4), 
+                    {Headers, Req5} = cowboy_http_req:headers(Req4), 
                     {ok, Body, Req6} = cowboy_http_req:body(Req5), 
 
                     %% make async request
-                    dwight_core_req_server:send_async(self(), atom_to_list(Method), Host, Port, Path, Body),
+                    dwight_core_req_server:send_async(self(), atom_to_list(Method), Host, 
+                                                      Port, Headers, Path, Body),
 
                     {loop, Req6, #state{}, ?TIMEOUT, hibernate};
                 undefined ->
