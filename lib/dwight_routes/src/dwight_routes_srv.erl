@@ -78,7 +78,7 @@ populate_tables() ->
     ok.
 
 create_table(Name, Elems) ->    
-    ets:new(Name, [public, named_table]), 
+    ets:new(Name, [set, public, named_table]), 
 
     lists:foreach(fun(Elem) ->
                           ets:insert(Name, Elem)

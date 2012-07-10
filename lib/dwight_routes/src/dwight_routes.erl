@@ -12,7 +12,7 @@
 -spec find_route_id(binary()) -> {ok, binary()} | undefined.
 find_route_id(Domain) ->
     case ets:lookup(domains, Domain) of
-        [{Domain, RouteId}] ->
+        [{Domain, RouteId} | _] ->
             {ok, RouteId};
         [] ->
             undefined
@@ -21,7 +21,7 @@ find_route_id(Domain) ->
 -spec find_service(binary()) -> {ok, binary()} | undefined.
 find_service(RouteId) ->
     case ets:lookup(route_ids, RouteId) of
-        [{RouteId, Host, Port}] ->
+        [{RouteId, Host, Port} | _] ->
             {ok, Host, Port};
         [] ->
             undefined
