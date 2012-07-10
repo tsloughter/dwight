@@ -110,13 +110,17 @@ get_client(Host, Port) ->
             Pid
     end.
 
-send_request(Client, Method, Host, Port, Headers, Path, _Body) ->
+send_request(Client, Method, Host, Port, Headers, Path, Body) ->
     Url = list_to_binary(lists:flatten(io_lib:format("http://~s:~p/~s", [Host, Port, Path]))),
     BinHeaders = [{cowboy_http_req:header_to_binary(H), V} || {H, V} <- Headers],
 
-    {ok, Client2} = cowboy_client:request(Method, Url, BinHeaders, Client),
-    {ok, Status, Response, Client3} = cowboy_client:response(Client2),
-
-    {ok, RespBody, Client4} = cowboy_client:response_body(Client3),
-    
-    {ok, Status, Response, RespBody, Client4}.
+    case cowboy_client:request(Method, Url, BinHeaders, Client) of
+        {ok, Client2} ->
+            {ok, Status, Response, Client3} = cowboy_client:response(Client2),
+            {ok, RespBody, Client4} = cowboy_client:response_body(Client3),   
+            {ok, Status, Response, RespBody, Client4};
+        {error, _Reason} ->
+            {ok, Client2} = cowboy_client:close(Client),
+            {ok, Client3} = cowboy_client:connect(cowboy_tcp_transport, Host, Port, Client2),
+            send_request(Client3, Method, Host, Port, Headers, Path, Body)
+    end.
