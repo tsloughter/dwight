@@ -82,8 +82,8 @@ handle_info(_Info, State) ->
 
 %%--------------------------------------------------------------------
 
-terminate(_Reason, _State) ->
-    ok.
+terminate(_Reason, #state{key={Host, Port}}) ->
+    gproc:unreg({n, l, {Host, Port}}).
 
 %%--------------------------------------------------------------------
 
