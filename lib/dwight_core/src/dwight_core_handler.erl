@@ -10,8 +10,10 @@
          handle/2, 
          terminate/2]).
 
+-record(state, {}).
+
 init({tcp, http}, Req, _Opts) ->
-    {ok, Req, undefined_state}.
+    {ok, Req, #state{}}.
 
 handle(Req, State) ->
     {[HostTokens], Req2} = cowboy_http_req:host(Req),   
