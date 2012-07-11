@@ -13,8 +13,10 @@
 %% API
 -export([start_link/2,
          close/1,
+         setup/5,
+         send_body/2,
          send/6,
-         send/7,
+         send/7,         
          send_async/7]).
 
 %% gen_server callbacks
@@ -31,6 +33,12 @@
 
 start_link(Host, Port) ->
     gen_server:start_link(?MODULE, [Host, Port], []).
+
+setup(Method, Host, Port, Headers, Path) ->
+    gen_server:call(get_client(Host, Port), {setup, Method, Host, Port, Headers, Path}).
+
+send_body(Pid, Body) ->
+    gen_server:call(Pid, {send_body, Body}).
 
 send(Pid, Method, Host, Port, Headers, Path, Body) ->
     gen_server:call(Pid, {Method, Host, Port, Headers, Path, Body}).
@@ -65,6 +73,16 @@ init([Host, Port]) ->
 handle_call(close, _From, State=#state{client=Client}) ->
     {ok, Client2} = cowboy_client:close(Client),
     {reply, ok, State#state{client=Client2}};
+handle_call({setup, Method, Host, Port, Headers, Path}, _From, State=#state{client=Client}) ->    
+    {ok, Client2} = 
+        setup_(Client, Method, Host, Port, Headers, Path),
+
+    {reply, {ok, self()}, State#state{client=Client2}};
+handle_call({send_body, Body}, _From, State=#state{client=Client}) ->    
+    {ok, Status, RespHeaders, RespBody, Client2} = 
+        send_body_(Client, Body),
+
+    {reply, {Status, RespHeaders, RespBody}, State#state{client=Client2}};
 handle_call({Method, Host, Port, Headers, Path, Body}, _From, State=#state{client=Client}) ->    
     {ok, Status, RespHeaders, RespBody, Client2} = 
         send_request(Client, Method, Host, Port, Headers, Path, Body),
@@ -74,9 +92,6 @@ handle_call({Method, Host, Port, Headers, Path, Body}, _From, State=#state{clien
 %%--------------------------------------------------------------------
 
 handle_cast({From, Method, Host, Port, Headers, Path, Body}, State=#state{client=Client}) ->    
-    {ok, _T, Socket} = cowboy_client:transport(Client),
-    io:format("Request on socket ~p~n", [Socket]),
-
     {ok, Status, RespHeaders, RespBody, Client2} = 
         send_request(Client, Method, Host, Port, Headers, Path, Body),
 
@@ -114,17 +129,28 @@ get_client(Host, Port) ->
             lists:nth(random:uniform(length(Pids)), Pids)
     end.
 
-send_request(Client, Method, Host, Port, Headers, Path, Body) ->
+setup_(Client, Method, Host, Port, Headers, Path) ->
+    {ok, _T, Socket} = cowboy_client:transport(Client),
+    io:format("Request on socket ~p~n", [Socket]),
+
     Url = list_to_binary(lists:flatten(io_lib:format("http://~s:~p/~s", [Host, Port, Path]))),
     BinHeaders = [{cowboy_http_req:header_to_binary(H), V} || {H, V} <- Headers],
 
     case cowboy_client:request(Method, Url, BinHeaders, Client) of
         {ok, Client2} ->
-            {ok, Status, Response, Client3} = cowboy_client:response(Client2),
-            {ok, RespBody, Client4} = cowboy_client:response_body(Client3),   
-            {ok, Status, Response, RespBody, Client4};
+            {ok, Client2};
         {error, _Reason} ->
             {ok, Client2} = cowboy_client:close(Client),
             {ok, Client3} = cowboy_client:connect(cowboy_tcp_transport, Host, Port, Client2),
-            send_request(Client3, Method, Host, Port, Headers, Path, Body)
+            setup_(Client3, Method, Host, Port, Headers, Path)
     end.
+
+send_body_(Client, _Body) ->
+    {ok, Status, Response, Client2} = cowboy_client:response(Client),
+    {ok, RespBody, Client3} = cowboy_client:response_body(Client2),   
+    {ok, Status, Response, RespBody, Client3}.
+
+send_request(Client, Method, Host, Port, Headers, Path, Body) ->
+    {ok, Client2} = setup_(Client, Method, Host, Port, Headers, Path),
+    send_body_(Client2, Body).
+

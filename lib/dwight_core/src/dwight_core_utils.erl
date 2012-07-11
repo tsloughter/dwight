@@ -18,10 +18,14 @@ make_request(SendReqFun, Req, State) ->
                     {Method, Req3} = cowboy_http_req:method(Req2), 
                     {Path, Req4} = cowboy_http_req:path(Req3), 
                     {Headers, Req5} = cowboy_http_req:headers(Req4), 
-
-                    {ok, Body, Req6} = cowboy_http_req:body(Req5), 
-
-                    SendReqFun(Method, Service, Port, Headers, Path, Body, Req6, State);
+   
+                    case cowboy_http_req:has_body(Req5) of
+                        {true, Req6} ->
+                            {ok, Body, Req7} = cowboy_http_req:body(Req6),                     
+                            SendReqFun(Method, Service, Port, Headers, Path, Req7, State);
+                        {false, Req6} ->
+                            SendReqFun(Method, Service, Port, Headers, Path, Req6, State)
+                    end;
                 undefined ->
                     %% No service found, return a 500 error
                     {ok, Req3} = cowboy_http_req:reply(500, [], <<"">>, Req2),
