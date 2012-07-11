@@ -74,13 +74,17 @@ handle_call(close, _From, State=#state{client=Client}) ->
     {ok, Client2} = cowboy_client:close(Client),
     {reply, ok, State#state{client=Client2}};
 handle_call({setup, Method, Host, Port, Headers, Path}, _From, State=#state{client=Client}) ->    
+    gproc:unreg({n, l, {Host, Port}}),
+
     {ok, Client2} = 
         setup_(Client, Method, Host, Port, Headers, Path),
 
     {reply, {ok, self()}, State#state{client=Client2}};
-handle_call({send_body, Body}, _From, State=#state{client=Client}) ->    
+handle_call({send_body, Body}, _From, State=#state{key={Host, Port}, client=Client}) ->    
     {ok, Status, RespHeaders, RespBody, Client2} = 
         send_body_(Client, Body),
+    
+    gproc:reg({n, l, {Host, Port}}, self()),
 
     {reply, {Status, RespHeaders, RespBody}, State#state{client=Client2}};
 handle_call({Method, Host, Port, Headers, Path, Body}, _From, State=#state{client=Client}) ->    
