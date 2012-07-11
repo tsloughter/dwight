@@ -105,12 +105,13 @@ code_change(_OldVsn, State, _Extra) ->
 
 -spec get_client(binary(), integer()) -> pid().
 get_client(Host, Port) ->
-    case gproc:where({n, l, {Host, Port}}) of
-        Pid when is_pid(Pid) ->
-            Pid;
-        _ ->
+    %% TODO: If list of pids is < list of backends, use new backend
+    case gproc:lookup_pids({n, l, {Host, Port}}) of
+        [] ->
             {ok, Pid} = dwight_core_req_sup:start_child(Host, Port),
-            Pid
+            Pid;
+        Pids ->
+            lists:nth(random:uniform(length(Pids)), Pids)
     end.
 
 send_request(Client, Method, Host, Port, Headers, Path, Body) ->

@@ -21,8 +21,9 @@ find_route_id(Domain) ->
 -spec find_service(binary()) -> {ok, binary()} | undefined.
 find_service(RouteId) ->
     case ets:lookup(route_ids, RouteId) of
-        [{RouteId, Host, Port} | _] ->
-            {ok, Host, Port};
         [] ->
-            undefined
+            undefined;
+        List ->
+            {RouteId, Host, Port} = lists:nth(random:uniform(length(List)), List),
+            {ok, Host, Port}
     end.
