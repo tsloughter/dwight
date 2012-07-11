@@ -74,6 +74,9 @@ handle_call({Method, Host, Port, Headers, Path, Body}, _From, State=#state{clien
 %%--------------------------------------------------------------------
 
 handle_cast({From, Method, Host, Port, Headers, Path, Body}, State=#state{client=Client}) ->    
+    {ok, _T, Socket} = cowboy_client:transport(Client),
+    io:format("Request on socket ~p~n", [Socket]),
+
     {ok, Status, RespHeaders, RespBody, Client2} = 
         send_request(Client, Method, Host, Port, Headers, Path, Body),
 

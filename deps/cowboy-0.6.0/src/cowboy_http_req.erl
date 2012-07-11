@@ -48,7 +48,7 @@
 ]). %% Response API.
 
 -export([
-	compact/1, transport/1
+	compact/1, transport/1, header_to_binary/1
 ]). %% Misc API.
 
 -include("http.hrl").

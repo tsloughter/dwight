@@ -10,17 +10,18 @@
 -export([make_request/3]).
 
 make_request(SendReqFun, Req, State) ->
-    {[HostTokens], Req2} = cowboy_http_req:host(Req),   
-    case dwight_routes:find_route_id(HostTokens) of
+    {Host, Req2} = cowboy_http_req:raw_host(Req),   
+    case dwight_routes:find_route_id(Host) of
         {ok, RouteId} ->    
             case dwight_routes:find_service(RouteId) of
-                {ok, Host, Port} ->
+                {ok, Service, Port} ->
                     {Method, Req3} = cowboy_http_req:method(Req2), 
                     {Path, Req4} = cowboy_http_req:path(Req3), 
                     {Headers, Req5} = cowboy_http_req:headers(Req4), 
+
                     {ok, Body, Req6} = cowboy_http_req:body(Req5), 
 
-                    SendReqFun(Method, Host, Port, Headers, Path, Body, Req6, State);
+                    SendReqFun(Method, Service, Port, Headers, Path, Body, Req6, State);
                 undefined ->
                     %% No service found, return a 500 error
                     {ok, Req3} = cowboy_http_req:reply(500, [], <<"">>, Req2),

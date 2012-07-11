@@ -65,8 +65,8 @@ transport(#client{socket=undefined}) ->
 transport(#client{transport=Transport, socket=Socket}) ->
 	{ok, Transport, Socket}.
 
-close(#client{socket=undefined}) ->
-	{error, notconnected};
+close(Client=#client{socket=undefined}) ->
+	{ok, Client#client{state=wait}};
 close(Client=#client{transport=Transport, socket=Socket}) ->
 	Transport:close(Socket),
 	{ok, Client#client{state=wait}}.
